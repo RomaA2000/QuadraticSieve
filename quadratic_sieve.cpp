@@ -3,6 +3,7 @@
 //
 #include <mutex>
 #include <future>
+#include <iostream>
 #include "quadratic_sieve.hpp"
 
 namespace {
@@ -201,7 +202,7 @@ std::pair<uint64_t, uint64_t> tonelli_shanks(uint64_t number, uint64_t prime) {
 }
 
 uint32_t positive_mod(mpz_class const &val, uint32_t mod) {
-  return mpz_class((val % mod) + mod).get_ui();
+  return mpz_class(((val % mod) + mod) % mod).get_ui();
 }
 
 auto indexes(vec_u64 const &factor_primes, mpz_class const &sqrt_of_number, mpz_class const &number) {
@@ -216,19 +217,17 @@ auto indexes(vec_u64 const &factor_primes, mpz_class const &sqrt_of_number, mpz_
   return ans;
 }
 
-auto get_residues(size_t array_size, mpz_class const &sqrt_of_number, mpz_class const &number) {
-  double last_bound = 0;
-  double prev_bound = 1;
-  // to use real numbers
-  std::vector<double> residues(array_size, 0);
-  size_t j = residues.size() + 1;
+auto get_residues(size_t array_size, uint64_t start_of_interval, mpz_class const &sqrt_of_number, mpz_class const &number) {
+  uint64_t last_bound = 0;
+  uint64_t prev_bound = 1;
+  std::vector<int64_t> residues(array_size, 0);
   for (size_t i = 1; i < residues.size(); ++i) {
-    if (prev_bound <= j) {
+    if (prev_bound <= start_of_interval + i) {
+      auto ans = mpz_class(((size_t)start_of_interval + i + sqrt_of_number) * ((size_t)start_of_interval + i + sqrt_of_number) - number);
       prev_bound = 2 * prev_bound + 1;
-      last_bound = mpz_sizeinbase(mpz_class((j + sqrt_of_number) * (j + sqrt_of_number) - number).get_mpz_t(), 2);
+      last_bound = mpz_sizeinbase((ans).get_mpz_t(), 2);
     }
     residues[i] = last_bound;
-    ++j;
   }
   return residues;
 }
@@ -268,12 +267,12 @@ mpz_class QuadraticSieve::factorize(mpz_class const &number) {
 //    }
 //  }
   while (factor_primes.size() + min_number > smooth_numbers.size()) {
-    auto residues_array = get_residues(sieving_interval, sqrt_of_number, number);
+    auto residues_array = get_residues(sieving_interval, start_of_interval, sqrt_of_number, number);
     for (size_t i = 0; i < factor_primes.size(); ++i) {
       auto while_tonelli = [&residues_array, i, &factor_primes, start_of_interval, end_of_interval](vec_u64 &tonelli) {
         while (tonelli[i] < end_of_interval) {
           if (tonelli[i] >= start_of_interval) {
-            residues_array[tonelli[i] - start_of_interval] -= get_number_size(factor_primes[i]);
+            residues_array[tonelli[i] - start_of_interval] -= get_number_size(factor_primes[i]) ;
             tonelli[i] += factor_primes[i];
           }
         }

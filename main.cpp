@@ -2,25 +2,27 @@
 #include <gmpxx.h>
 #include <cmath>
 #include <optional>
+#include <chrono>
 #include "quadratic_sieve.hpp"
 
 uint64_t get_B(mpz_class const & number) {
   const double log_n = mpz_sizeinbase(number.get_mpz_t(), 2);
   const double log_log_n = std::log(log_n);
-  return 300 + 2 * std::ceil(std::exp(0.5 * std::sqrt(log_n * log_log_n)));
+  return 300 + std::ceil(std::exp(0.5 * std::sqrt(log_n * log_log_n)));
 }
 
 void test(mpz_class const & num) {
   auto B = get_B(num);
-  auto qs = QuadraticSieve(B, 50, 50000);
+  auto qs = QuadraticSieve(B, 50, 100000);
   mpz_class d = qs.factorize(num);
   mpz_class r, q;
   mpz_cdiv_q(q.get_mpz_t(), num.get_mpz_t(), d.get_mpz_t());
   mpz_cdiv_r(r.get_mpz_t(), num.get_mpz_t(), d.get_mpz_t());
   mpz_class result = d * q;
   std::cout << "test " << result.get_str() << " = " << d.get_str() << " * " << q.get_str() << std::endl;
-  assert(r == 0);
-  assert(result == num);
+  if ((r != 0) || (result != num)) {
+    std::cout << "test failed" << std::endl;
+  }
 }
 
 void test_time(mpz_class const & num) {
@@ -54,7 +56,7 @@ std::string repeat(size_t size, size_t num) {
   return ans;
 }
 
-int main() {
+void run_tests() {
   test(1000);
   test(10001);
   test(999999);
@@ -73,8 +75,18 @@ int main() {
   test(mpz_class("99999999999999999999999999"));
   test(mpz_class("9999999999999999999999999999"));
   test(mpz_class("9182317283712837192837824621"));
-  test(mpz_class("987658695847362574856378373839")); // size 30
-  //test(mpz_class("987658695847362574856378373839987658695847362574856378373839")); // size 60
+  test(mpz_class("987658695847362574856378373839"));
+}
+
+int main() {
+
+//  run_tests();
+
+  std::cout << "Введите число:" << std::endl;
+  std::string input;
+  std::cin >> input;
+  test(mpz_class(input));
+
 //  freopen("results.txt", "w", stdout);
 //  test_time(2138212);
 //  test_time(5232673);
