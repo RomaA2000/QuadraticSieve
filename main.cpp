@@ -44,8 +44,9 @@ void test_time(mpz_class const & num) {
   mpz_cdiv_r(r.get_mpz_t(), num.get_mpz_t(), d.get_mpz_t());
   mpz_class result = d * q;
   //std::cout << "test " << result.get_str() << " = " << d.get_str() << " * " << q.get_str() << std::endl;
-  assert(r == 0);
-  assert(result == num);
+  if ((r != 0) || (result != num)) {
+    std::cout << "test failed" << std::endl;
+  }
 }
 
 std::string repeat(size_t size, size_t num) {
